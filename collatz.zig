@@ -1,13 +1,10 @@
 const std = @import("std");
-const expect = std.testing.expect;
 const ginp = @import("./ginp.zig");
+const f = @import("./dynamicLU.zig");
+const expect = std.testing.expect;
 const getInp = ginp.getInput;
-
-const collCall = struct {
-    steps: u16 = 0,
-    maxVal: u64 = 0,
-    converges: bool = true,
-};
+const math = std.math;
+const tab = f.DynamicTable;
 
 fn converges(n: u64) u64 {
     var counter: u64 = 0;
@@ -29,12 +26,10 @@ fn typeConversion(s: []const u8) u64 {
         const q = s.len - 1;
         var sum: u64 = 0;
         for (s, 0..) |char, index| {
-            if (char <= 48 or char >= 57) {
+            if (char < 48 or char > 57) {
                 return 0;
             }
-            // ASCII conversion here cause I forgot about that ugh
-            // I'll do it later cause that's just annoying
-            // sum += (q - index) * 10 * char;
+            sum += (char - 48) * math.pow(u64, 10, (q - index));
         }
         return sum;
     };
@@ -46,18 +41,16 @@ pub fn main() !void {
     const allocator = gpa.allocator();
     const stdout = std.io.getStdOut().writer();
     var longest = [2]u64{ 0, 0 };
-    var avg: f128 = 0.0;
+    var avg: f64 = 0.0;
     var cnum: u64 = 1;
     const inpNum = try getInp(allocator, "Up to what number: ");
-    try stdout.print("Input number type: {}\n", .{@TypeOf(inpNum)});
-    try stdout.print("Here's that thang: {any}\n", .{inpNum});
     defer allocator.free(inpNum);
-    while (cnum <= 10000) {
+    while (cnum <= typeConversion(inpNum)) {
         const c = converges(cnum);
         //try stdout.print("{} converges: {}\n", .{ cnum, c });
-        if (c != 255) {
-            const floatcnum: f128 = @as(f128, @floatFromInt(cnum));
-            avg = (avg * (floatcnum - 1.0) + @as(f128, @floatFromInt(c))) / floatcnum;
+        if (c != 18446744073709551615) {
+            const floatcnum: f64 = @as(f64, @floatFromInt(cnum));
+            avg = (avg * (floatcnum - 1.0) + @as(f64, @floatFromInt(c))) / floatcnum;
             if (c > longest[0]) {
                 longest[0] = c;
                 longest[1] = cnum;
@@ -71,10 +64,20 @@ pub fn main() !void {
 }
 
 test "Type Conversions" {
-    const correct = [5]u8{ 2, 5, 4, 1, 1 };
-    const incorrect = [5]u8{ 6, 4, "e", 5, "f" }; // Needs ASCII characters not this garbage
-    const ctest: u64 = typeConversion(correct);
-    try expect(ctest == 25411);
-    const itest = typeConversion(incorrect);
+    const correct = [5]u8{ 50, 49, 51, 51, 54 };
+    const incorrect = [5]u8{ 48, 7, 55, 3, 90 };
+    const ctest: u64 = typeConversion(&correct);
+    try expect(ctest == 21336);
+    const itest = typeConversion(&incorrect);
     try expect(itest == 0);
+}
+
+test "Pleasepleaseplease" {
+    const stdout = std.io.getStdOut().writer();
+    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    defer _ = gpa.deinit();
+    const allocator = gpa.allocator();
+    var table = tab(u64).init(allocator);
+    defer table.deinit();
+    try stdout.print("Table initialized successfully!\n", .{});
 }

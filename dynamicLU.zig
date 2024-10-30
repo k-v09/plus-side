@@ -49,6 +49,12 @@ pub fn DynamicTable(comptime T: type) type {
         pub fn slice(self: Self) []T {
             return self.data.items;
         }
+        pub fn contains(self: Self, value: T) bool {
+            for (self.data.items) |item| {
+                if (item == value) return true;
+            }
+            return false;
+        }
     };
 }
 
@@ -70,6 +76,7 @@ pub fn main() !void {
         try stdout.print("{} ", .{value});
     }
     try stdout.print("\n", .{});
+    try stdout.print("Table contains 15: {}\n", .{table.contains(15)});
 
     try table.insert(1, 15);
     try stdout.print("After insert(1, 15): ", .{});
@@ -77,6 +84,7 @@ pub fn main() !void {
         try stdout.print("{} ", .{value});
     }
     try stdout.print("\n", .{});
+    try stdout.print("Table contains 15: {}\n", .{table.contains(15)});
 
     _ = table.remove(2);
     try stdout.print("After remove(2): ", .{});
